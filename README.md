@@ -76,10 +76,16 @@ The default are 7 days before a song is actually deleted:
 2. onesie sees it during the next run and adds it to its deletion queue.
 3. The file stays untouched during the grace period.
 4. With Apprise warnings enabled, onesie first warns you **2 days before the planned deletion** (day 5 with the default 7-day grace period).
-5. If that warning cannot be delivered, onesie retries no more often than every **12 hours**.
-6. A failed warning inside the final **12-hour safety window** postpones that track by **24 hours**, then retries continue.
+5. If that warning cannot be delivered, onesie retries every **12 hours**.
+6. A failed warning inside the final **12-hour safety window** postpones deletion of that track by **24 hours**, then retries continue.
 7. If you change the rating at any point before deletion, the deletion is cancelled.
 8. When the grace period, warning gate, and final live rating check all pass, onesie removes the track.
+
+The notification feature is designed to allow users to monitor which songs onesie would delete and, if necessary, intervene in time. For this reason, it's designed to be very conservative and focused on safety.
+
+If you don’t want the deletion of the songs to depend on the success of the push notification, you can simply set `notify_before_deletion` to `false`.
+
+In that case, the songs will be deleted as planned after 7 days without prior notifications.
 
 If you use the 12-hour notification retry feature, schedule onesie at least every 12 hours. Without pre-deletion notifications, a daily run is usually enough.
 
@@ -145,7 +151,7 @@ python -m pip install apprise
 onesie init
 ```
 
-Adjust the generated configuration for your Navidrome server and music paths before running anything against real files.
+Adjust the generated `onesie.yaml` config file for your Navidrome server and music paths before running anything against real files.
 
 ## Configuration
 
@@ -208,7 +214,7 @@ onesie -c onesie.yaml doctor
 
 This is the first command to run after configuring onesie.
 
-If it reports that Navidrome is returning a synthetic path, enable **Report Real Path** for the `onesie` player and run the check again.
+If it reports that Navidrome is returning a synthetic path, open your Navidrome server, click your user icon in the top right, open `Players`, select `onesie` and enable **Report Real Path** for the onesie player. Then run the `doctor` command again.
 
 ### 3. Rate one test track 1 star
 
