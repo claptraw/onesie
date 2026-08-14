@@ -1,0 +1,42 @@
+navidrome:
+  url: http://navidrome:4533
+  username: YOUR_NAVIDROME_USER
+  password_env: ONESIE_NAVIDROME_PASSWORD
+  client: Onesie
+  server_music_root: /music
+  verify_tls: true
+  request_timeout: 20
+  page_size: 500
+  trigger_scan: true
+
+policy:
+  delete_rating: 1
+  grace_period: 7d
+  max_deletions_per_run: 20
+  dry_run: true
+  strict_validation: true
+
+delete:
+  backend: filesystem
+
+filesystem:
+  music_root: /music
+  sidecars:
+    - .lrc
+  prune_empty_dirs: false
+
+# Used only when delete.backend: beets
+beets:
+  executable: beet
+  # config_file: /config/config.yaml
+
+notifications:
+  enabled: false
+  # apprise_config: /config/apprise.conf
+  tag: ""
+  notify_on_noop: false
+  notify_on_dry_run: false
+
+runtime:
+  state_file: /config/state/onesie-state.json
+  audit_log: /config/state/onesie-audit.jsonl

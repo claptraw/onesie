@@ -1,0 +1,15 @@
+services:
+  onesie:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: local/onesie:latest
+    container_name: onesie
+    restart: "no"
+    user: "${PUID:-1000}:${PGID:-1000}"
+    environment:
+      ONESIE_NAVIDROME_PASSWORD: "${ONESIE_NAVIDROME_PASSWORD}"
+    volumes:
+      - ./config:/config
+      - /path/to/music:/music
+    command: ["--config", "/config/onesie.yaml", "run"]
