@@ -11,13 +11,62 @@ from .config import Config
 from .engine import OnesieEngine
 from .errors import OnesieError
 
-EXAMPLE_CONFIG = """# Onesie configuration\nnavidrome:\n  url: http://localhost:4533\n  username: YOUR_USER\n  password_env: ONESIE_NAVIDROME_PASSWORD\n  client: Onesie\n  server_music_root: /music\n  verify_tls: true\n  trigger_scan: true\n\npolicy:\n  delete_rating: 1\n  grace_period: 7d\n  max_deletions_per_run: 20\n  dry_run: true\n  strict_validation: true\n\ndelete:\n  backend: filesystem  # filesystem | beets\n\nfilesystem:\n  music_root: /music\n  sidecars: [.lrc]\n  prune_empty_dirs: false\n\nbeets:\n  executable: beet\n  # config_file: /path/to/config.yaml\n\nnotifications:\n  enabled: false\n  # apprise_config: /path/to/apprise.yaml\n  tag: \"\"\n  notify_on_noop: false\n  notify_on_dry_run: false\n\nruntime:\n  state_file: ./state/onesie-state.json\n  audit_log: ./state/onesie-audit.jsonl\n"""
+EXAMPLE_CONFIG = """# onesie configuration
+navidrome:
+  url: http://localhost:4533
+  username: YOUR_USER
+  password_env: ONESIE_NAVIDROME_PASSWORD
+  client: onesie
+  server_music_root: /music
+  verify_tls: true
+  trigger_scan: true
+
+policy:
+  delete_rating: 1
+  grace_period: 7d
+  max_deletions_per_run: 20
+  dry_run: true
+  strict_validation: true
+
+delete:
+  backend: filesystem  # filesystem | beets
+
+filesystem:
+  music_root: /music
+  sidecars: [.lrc]
+  prune_empty_dirs: false
+  cleanup_files:
+    - cover.jpg
+    - cover.webp
+    - cover.mp4
+
+beets:
+  executable: beet
+  # config_file: /path/to/config.yaml
+
+notifications:
+  enabled: false
+  # apprise_config: /path/to/apprise.conf
+  tag: ""
+  notify_before_deletion: true
+  warning_before_deletion: 2d
+  warning_retry_interval: 12h
+  final_warning_window: 12h
+  warning_failure_postpone: 1d
+  notify_after_deletion: true
+  notify_on_noop: false
+  notify_on_dry_run: false
+
+runtime:
+  state_file: ./state/onesie-state.json
+  audit_log: ./state/onesie-audit.jsonl
+"""
 
 
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="onesie", description="Safely delete Navidrome tracks marked with a rating.")
-    parser.add_argument("--version", action="version", version=f"Onesie {__version__}")
-    parser.add_argument("-c", "--config", type=Path, default=Path("onesie.yaml"), help="Path to Onesie YAML config")
+    parser.add_argument("--version", action="version", version=f"onesie {__version__}")
+    parser.add_argument("-c", "--config", type=Path, default=Path("onesie.yaml"), help="Path to onesie YAML config")
     parser.add_argument("-v", "--verbose", action="count", default=0)
     sub = parser.add_subparsers(dest="command", required=True)
     run = sub.add_parser("run", help="Process the delete queue once")
@@ -62,12 +111,12 @@ def main(argv: list[str] | None = None) -> int:
             if not config.notifications.enabled:
                 print("Apprise notifications are disabled in the config", file=sys.stderr)
                 return 2
-            return 0 if engine.notifier.send("Onesie test", "Your Onesie notifications are working.", "success") else 2
+            return 0 if engine.notifier.send("onesie test", "Your onesie notifications are working.", "success") else 2
     except OnesieError as exc:
         logging.getLogger("onesie").error("%s", exc)
         if engine is not None:
             try:
-                engine.notifier.send("Onesie: run blocked", str(exc), "failure")
+                engine.notifier.send("onesie: run blocked", str(exc), "failure")
             except OnesieError:
                 pass
         return 2

@@ -26,7 +26,7 @@ class Notifier:
         except ImportError as exc:
             raise ConfigError(
                 "Apprise notifications are enabled but Apprise is not installed. "
-                "Install Onesie with: pip install 'onesie-navidrome[notifications]'"
+                "Install onesie with: pip install 'onesie-navidrome[notifications]'"
             ) from exc
         app = apprise.Apprise()
         cfg = apprise.AppriseConfig()
@@ -57,7 +57,7 @@ class Notifier:
                 tag=self.config.tag or None,
                 notify_type=notify_type,
             )
-        except Exception as exc:  # notification failure must never change deletion semantics
+        except Exception as exc:
             self.logger.error("Apprise notification failed: %s", exc)
             return False
         return bool(result)

@@ -35,7 +35,8 @@ By default, onesie uses a **7-day grace period**. If you change your mind and wa
 - Final rating check immediately before a real deletion.
 - Works with **Navidrome only**.
 - Optional **beets integration** for libraries already managed by [beets](https://beets.io/).
-- Optional cleanup of matching sidecar files such as `.lrc` lyrics and any leftover, now empty folders.
+- Optional cleanup of matching sidecar files such as `.lrc` lyrics.
+- Optional orphan cleanup can also remove configured cover files and directories that become truly empty because of the same onesie deletion run.
 - Supports one or multiple Navidrome music folders.
 - Dry-run mode for safely testing the complete workflow.
 - Batch limit to stop unexpected mass-deletion runs.
@@ -73,11 +74,14 @@ The default are 7 days before a song is actually deleted:
 
 1. You rate a track 1 star.
 2. onesie sees it during the next run and adds it to its deletion queue.
-3. The file stays untouched for seven days.
-4. If you change the rating before the grace period ends, the deletion is cancelled.
-5. If the track is still rated 1 star after seven days, onesie checks it again and removes it.
+3. The file stays untouched during the grace period.
+4. With Apprise warnings enabled, onesie first warns you **2 days before the planned deletion** (day 5 with the default 7-day grace period).
+5. If that warning cannot be delivered, onesie retries no more often than every **12 hours**.
+6. A failed warning inside the final **12-hour safety window** postpones that track by **24 hours**, then retries continue.
+7. If you change the rating at any point before deletion, the deletion is cancelled.
+8. When the grace period, warning gate, and final live rating check all pass, onesie removes the track.
 
-Running onesie once per day is a practical default for most setups.
+If you use the 12-hour notification retry feature, schedule onesie at least every 12 hours. Without pre-deletion notifications, a daily run is usually enough.
 
 ## Prerequisites
 
@@ -116,7 +120,7 @@ If Navidrome returns a synthetic library path instead of a real file path, onesi
 Download the wheel from the GitHub Release and install it with pip:
 
 ```bash
-python -m pip install ./onesie_navidrome-0.1a1-py3-none-any.whl
+python -m pip install ./onesie_navidrome-0.1a2-py3-none-any.whl
 ```
 
 The Python distribution is named `onesie-navidrome`, while the command you use is simply:
@@ -218,6 +222,8 @@ onesie -c onesie.yaml run
 
 The track should enter the queue, but no file is removed while dry-run mode is enabled.
 
+Once a queued track reaches deletion age, the dry-run output shows the complete deletion plan: audio file, matching sidecars, eligible cleanup files, and directories that would become removable.
+
 ### 4. Check the queue
 
 ```bash
@@ -250,7 +256,22 @@ Matching sidecars can also be removed. For example:
 
 With `.lrc` configured as a sidecar, when the audio file is deleted by onesie, the lyric file is also removed.
 
-onesie does not sweep the rest of the album folder and does not remove covers or unrelated files.
+By default, onesie does not sweep the rest of the album folder.
+
+If you explicitly enable `prune_empty_dirs`, onesie can also keep the library tidy after deleting the last track from a folder:
+
+```yaml
+filesystem:
+  prune_empty_dirs: true
+  cleanup_files:
+    - cover.jpg
+    - cover.webp
+    - cover.mp4
+```
+
+This cleanup is deliberately strict. Configured cover files are removed only when, after the audio/sidecar deletions from that onesie run, **nothing else remains in the directory except those allowed cleanup files**. Any unrelated file, symlink, or remaining subdirectory blocks cleanup of that directory.
+
+After a directory becomes genuinely empty, onesie may remove it and continue upward through now-empty parent directories, but never removes the configured music root itself.
 
 ## Optional beets integration
 
@@ -299,9 +320,21 @@ notifications:
   enabled: true
   apprise_config: /etc/onesie/apprise.conf
   tag: ""
+
+  notify_before_deletion: true
+  warning_before_deletion: 2d
+  warning_retry_interval: 12h
+  final_warning_window: 12h
+  warning_failure_postpone: 1d
+
+  notify_after_deletion: true
 ```
 
-Your Apprise configuration can then contain whichever supported notification service you prefer (e.g. Pushover, Pushbullet, Discord, Telegram, Slack etc.).
+With the default 7-day grace period, the first warning is due on day 5. If delivery fails, onesie retries after at least 12 hours. A failure in the final 12-hour window postpones that track by 24 hours rather than allowing an unannounced deletion.
+
+After successful deletion, the notification lists the songs that were deleted and summarizes removed sidecars, cover/cleanup files, and directories.
+
+Your Apprise configuration can contain whichever supported notification service you prefer (e.g. Pushover, Pushbullet, Discord, Telegram, Slack etc.).
 
 Test it with:
 
@@ -321,7 +354,9 @@ A typical setup simply runs:
 onesie -c /path/to/onesie.yaml run
 ```
 
-once per day.
+on your preferred schedule.
+
+When pre-deletion notifications use the default `warning_retry_interval: 12h`, run onesie at least every 12 hours if you want retries to happen on that cadence. A less frequent scheduler still works, but retries can only happen when onesie is actually invoked.
 
 You can use whatever scheduler already fits your setup, for example:
 
@@ -332,7 +367,7 @@ You can use whatever scheduler already fits your setup, for example:
 - launchd;
 - a scheduled one-shot Docker container.
 
-With a 7-day grace period, a daily run is usually enough.
+With a 7-day grace period and notifications disabled, a daily run is usually enough. With the default notification retry settings, twice per day is the practical choice.
 
 ## Docker
 
@@ -386,6 +421,7 @@ Before a real deletion, it checks that:
 
 - the track is still using the configured delete rating;
 - the complete grace period has passed;
+- when pre-deletion warnings are enabled, a warning was delivered successfully and the final warning window has elapsed;
 - Navidrome reports a real absolute path;
 - the file is inside one of the configured music roots;
 - the path does not escape through traversal or symlinks;
@@ -418,12 +454,12 @@ These safeguards reduce risk, but they are not a substitute for testing and back
 - It does not modify the Navidrome database directly.
 - It does not require or modify beets unless you explicitly select the beets backend.
 - It does not create a separate "to delete" playlist.
-- It does not remove album covers or arbitrary unrelated files from album folders.
+- It never removes arbitrary unrelated files from album folders; optional cover cleanup only applies to explicitly configured filenames under the strict empty-folder cleanup rules.
 - It does not replace your backup or snapshot strategy.
 
 ## Current alpha status
 
-`v0.1alpha1` is the first public alpha release.
+`v0.1alpha2` is an early public alpha release and is still intended for controlled testing rather than production libraries.
 
 The goal of the alpha phase is to validate the workflow across different real-world Navidrome setups before onesie is considered safe for production libraries.
 

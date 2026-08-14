@@ -13,7 +13,7 @@ def mapper(root: Path) -> PathMapper:
             url="http://n",
             username="u",
             password="p",
-            client="Onesie",
+            client="onesie",
             api_version="1.16.1",
             server_music_root=PurePosixPath("/music"),
             verify_tls=True,
@@ -27,6 +27,7 @@ def mapper(root: Path) -> PathMapper:
             allowed_extensions=frozenset({".flac"}),
             sidecars=(".lrc",),
             prune_empty_dirs=False,
+            cleanup_files=("cover.jpg", "cover.webp", "cover.mp4"),
         ),
     )
 
@@ -82,9 +83,10 @@ def test_multiple_root_mapping_uses_matching_local_root(tmp_path):
         allowed_extensions=frozenset({".flac"}),
         sidecars=(".lrc",),
         prune_empty_dirs=False,
+        cleanup_files=("cover.jpg", "cover.webp", "cover.mp4"),
     )
     nav = NavidromeConfig(
-        url="http://n", username="u", password="p", client="Onesie", api_version="1.16.1",
+        url="http://n", username="u", password="p", client="onesie", api_version="1.16.1",
         server_music_root=PurePosixPath("/music-main"), verify_tls=True, request_timeout=20, page_size=500, trigger_scan=False
     )
     mapped = PathMapper(nav, fs).map_song({"id": "2", "path": "/music-archive/Artist/Song.flac"})

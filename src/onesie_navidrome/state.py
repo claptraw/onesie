@@ -7,7 +7,8 @@ from typing import Any
 
 from .errors import SafetyError
 
-STATE_VERSION = 2
+STATE_VERSION = 3
+LEGACY_STATE_VERSION = 2
 
 
 class StateStore:
@@ -21,11 +22,17 @@ class StateStore:
             data = json.loads(self.path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError) as exc:
             raise SafetyError(f"Could not read state file safely: {self.path}: {exc}") from exc
-        if data.get("version") != STATE_VERSION or not isinstance(data.get("tracks"), dict):
+        if not isinstance(data.get("tracks"), dict):
+            raise SafetyError(f"Unsupported or invalid state file: {self.path}")
+        if data.get("version") == LEGACY_STATE_VERSION:
+            data["version"] = STATE_VERSION
+            return data
+        if data.get("version") != STATE_VERSION:
             raise SafetyError(f"Unsupported or invalid state file: {self.path}")
         return data
 
     def save(self, data: dict[str, Any]) -> None:
+        data["version"] = STATE_VERSION
         self.path.parent.mkdir(parents=True, exist_ok=True)
         temp = self.path.with_name(self.path.name + ".tmp")
         with temp.open("w", encoding="utf-8") as handle:

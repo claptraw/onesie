@@ -37,7 +37,7 @@ class PathMapper:
         if not raw.is_absolute():
             raise SafetyError(
                 "Navidrome returned a synthetic/relative Subsonic path. Enable Report Real Path "
-                f"for the Onesie player (or Navidrome Subsonic.DefaultReportRealPath): {raw_path}"
+                f"for the onesie player (or Navidrome Subsonic.DefaultReportRealPath): {raw_path}"
             )
         mapping, relative = self._select_mapping(raw)
         if not relative.parts or relative == PurePosixPath("."):

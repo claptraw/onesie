@@ -121,3 +121,53 @@ filesystem:
     )
     assert len(cfg.filesystem.path_mappings) == 2
     assert cfg.filesystem.path_mappings[1].local_root == two
+
+
+def test_alpha2_notification_and_cleanup_defaults(tmp_path, monkeypatch):
+    monkeypatch.setenv("ONESIE_NAVIDROME_PASSWORD", "secret")
+    root = tmp_path / "music"
+    root.mkdir()
+    cfg = Config.load(
+        write(
+            tmp_path,
+            f"""
+navidrome:
+  url: http://navidrome
+  username: user
+filesystem:
+  music_root: {root}
+""",
+        )
+    )
+    assert cfg.navidrome.client == "onesie"
+    assert cfg.filesystem.prune_empty_dirs is False
+    assert cfg.filesystem.cleanup_files == ("cover.jpg", "cover.webp", "cover.mp4")
+    assert cfg.notifications.notify_before_deletion is True
+    assert cfg.notifications.warning_before_deletion_seconds == 2 * 86400
+    assert cfg.notifications.warning_retry_interval_seconds == 12 * 3600
+    assert cfg.notifications.final_warning_window_seconds == 12 * 3600
+    assert cfg.notifications.warning_failure_postpone_seconds == 86400
+    assert cfg.notifications.notify_after_deletion is True
+
+
+def test_warning_lead_time_must_be_shorter_than_grace_period(tmp_path, monkeypatch):
+    monkeypatch.setenv("ONESIE_NAVIDROME_PASSWORD", "secret")
+    root = tmp_path / "music"
+    root.mkdir()
+    with pytest.raises(ConfigError, match="warning_before_deletion"):
+        Config.load(
+            write(
+                tmp_path,
+                f"""
+navidrome:
+  url: http://navidrome
+  username: user
+filesystem:
+  music_root: {root}
+policy:
+  grace_period: 1d
+notifications:
+  warning_before_deletion: 2d
+""",
+            )
+        )

@@ -2,7 +2,7 @@ navidrome:
   url: http://navidrome:4533
   username: YOUR_NAVIDROME_USER
   password_env: ONESIE_NAVIDROME_PASSWORD
-  client: Onesie
+  client: onesie
   server_music_root: /music
   verify_tls: true
   request_timeout: 20
@@ -23,7 +23,15 @@ filesystem:
   music_root: /music
   sidecars:
     - .lrc
+
+  # Off by default. When enabled, onesie may remove configured cover files
+  # only when they are the only remaining entries after onesie's deletions,
+  # then remove directories that have become truly empty.
   prune_empty_dirs: false
+  cleanup_files:
+    - cover.jpg
+    - cover.webp
+    - cover.mp4
 
 # Used only when delete.backend: beets
 beets:
@@ -34,6 +42,18 @@ notifications:
   enabled: false
   # apprise_config: /config/apprise.conf
   tag: ""
+
+  # With a 7-day grace period, the first warning is due on day 5.
+  # Failed delivery attempts are retried no more often than every 12 hours.
+  # If delivery still fails inside the final 12-hour window, the affected
+  # track is postponed by 24 hours and retries continue.
+  notify_before_deletion: true
+  warning_before_deletion: 2d
+  warning_retry_interval: 12h
+  final_warning_window: 12h
+  warning_failure_postpone: 1d
+
+  notify_after_deletion: true
   notify_on_noop: false
   notify_on_dry_run: false
 

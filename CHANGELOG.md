@@ -2,7 +2,7 @@
 
 ## v0.1alpha1 - 2026-08-14
 
-First public alpha of the universal Onesie architecture.
+First public alpha of the universal onesie architecture.
 
 - Standalone run-once CLI; no daemon required.
 - Navidrome-only filesystem deletion backend.

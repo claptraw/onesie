@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "onesie-navidrome"
-version = "0.1a1"
+version = "0.1a2"
 description = "Safely turn Navidrome ratings into delayed, auditable deletion requests."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -35,7 +35,7 @@ all = ["apprise>=1.9"]
 Homepage = "https://github.com/claptraw/onesie"
 Repository = "https://github.com/claptraw/onesie"
 Issues = "https://github.com/claptraw/onesie/issues"
-Changelog = "https://github.com/claptraw/onesie/blob/main/CHANGELOG.md"
+Changelog = "https://github.com/claptraw/onesie/releases"
 
 [project.scripts]
 onesie = "onesie_navidrome.cli:main"

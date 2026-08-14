@@ -1,6 +1,6 @@
 # Security and destructive-operation policy
 
-Onesie deletes files by design. Treat configuration changes as privileged operations.
+onesie deletes files by design. Treat configuration changes as privileged operations.
 
 ## Defaults
 
@@ -10,6 +10,13 @@ Onesie deletes files by design. Treat configuration changes as privileged operat
 - Files outside configured local music roots are rejected.
 - A final `getSong` call re-checks rating and path immediately before deletion.
 - A per-run batch limit aborts the destructive phase before any file is removed.
+- Empty-folder/cover cleanup is disabled by default (`filesystem.prune_empty_dirs: false`).
+- When pre-deletion notifications are enabled, deletion requires a successfully delivered warning and the configured final warning window.
+- A failed warning in the final warning window postpones only the affected track and does not silently bypass the warning gate.
+
+## Optional cleanup
+
+Configured cleanup files such as `cover.jpg` are only removed when, after onesie's own track/sidecar removals, every remaining entry in that directory is an explicitly allowed cleanup file. Any unrelated file, symlink, or remaining subdirectory blocks cleanup of that directory. The configured music root itself is never removed.
 
 ## Credentials
 
